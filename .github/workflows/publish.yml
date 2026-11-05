@@ -14,19 +14,12 @@ jobs:
       contents: write
       actions: read
     steps:
-      - name: Find latest successful Android CI run
-        id: find-run
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RUN_ID=$(gh run list --workflow build.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId')
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
       - name: Download signed APK artifact
         uses: actions/download-artifact@v4
         with:
           name: app-release
           path: apk
-          run-id: ${{ steps.find-run.outputs.run_id }}
+          run-id: 42090609338
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Verify artifact contents
         run: |
@@ -34,8 +27,8 @@ jobs:
           test -f apk/app-release-signed.apk
       - name: Verify signature
         run: |
-          SDK=$(ls $ANDROID_SDK_ROOT/build-tools | sort -V | tail -1)
-          $ANDROID_SDK_ROOT/build-tools/$SDK/apksigner verify --verbose apk/app-release-signed.apk
+          SDK=$(ls $ANDROID_SDK_BASE/build-tools | sort -V | tail -1)
+          $ANDROID_SDK_BASE/build-tools/$SDK/apksigner verify --verbose apk/app-release-signed.apk
       - name: Verify package ID
         run: |
           SDK=$(ls $ANDROID_SDK_BASE/build-tools | sort -V | tail -1)
