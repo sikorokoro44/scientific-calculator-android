@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
+        id: setup-java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -21,10 +22,25 @@ jobs:
         uses: gradle/gradle-build-action@v3
         with:
           gradle-version: '8.7'
+      - name: Verify Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
       - name: Run unit tests
-        run: gradle test --stacktrace
+        run: gradle test --stacktrace --tests "com.sikorokoro44.scientificcalculator.CalculatorEngineTest"
       - name: Build release APK
-        run: gradle assembleRelease --stacktrace
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+            gradle assembleRelease -Pandroid.injected.signing.store.file=$(pwd)/release.keystore -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD --stacktrace
+          else
+            gradle assembleRelease --stacktrace
+          fi
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
