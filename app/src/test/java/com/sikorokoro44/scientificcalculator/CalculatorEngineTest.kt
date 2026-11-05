@@ -9,7 +9,7 @@ class CalculatorEngineTest {
     @Test fun basicAdd() = assertEquals(5.0, e.evaluate("2+3"), 1e-9)
     @Test fun precedence() = assertEquals(14.0, e.evaluate("2+3*4"), 1e-9)
     @Test fun parens() = assertEquals(20.0, e.evaluate("(2+3)*4"), 1e-9)
-    @Test fun nested() = assertEquals(23.0, e.evaluate("2*(3+4)+5*(1+2)"), 1e-9)
+    @Test fun nested() = assertEquals(29.0, e.evaluate("2*(3+4)+5*(1+2)"), 1e-9)
     @Test fun division() = assertEquals(2.5, e.evaluate("5/2"), 1e-9)
     @Test fun percent() = assertEquals(50.0, e.evaluate("50%100"), 1e-9)
     @Test fun power() = assertEquals(8.0, e.evaluate("2^3"), 1e-9)
@@ -28,6 +28,8 @@ class CalculatorEngineTest {
     @Test fun invalid() { try { e.evaluate("2++"); fail() } catch (ex: Exception) {} }
     @Test fun radMode() = assertEquals(Math.sin(1.0), e.evaluate("sin(1)", false), 1e-9)
     @Test fun asinDeg() = assertEquals(30.0, e.evaluate("asin(0.5)"), 1e-9)
-    @Test fun logBase() = assertEquals(2.0, e.evaluate("log(8,2)"), 1e-9)
+    @Test fun logBase() = assertEquals(3.0, e.evaluate("log(8,2)"), 1e-9)
     @Test fun root() = assertEquals(3.0, e.evaluate("root(27,3)"), 1e-9)
+    @Test fun hyperbolic() = assertEquals(Math.sinh(1.0), e.evaluate("sinh(1)"), 1e-9)
+    @Test fun tanDeg() = assertEquals(1.0, e.evaluate("tan(45)"), 1e-9)
 }
