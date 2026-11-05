@@ -1,18 +1,16 @@
 name: Publish Signed APK
 
 on:
-  workflow_run:
-    workflows: ["Android CI"]
-    types: [completed]
   workflow_dispatch:
 
 jobs:
   publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Download signed APK artifact
         uses: actions/download-artifact@v4
@@ -34,10 +32,15 @@ jobs:
           SDK=$(ls $ANDROID_SDK_BASE/build-tools | sort -V | tail -1)
           $ANDROID_SDK_BASE/build-tools/$SDK/aapt dump badging apk/app-release-signed.apk | grep "package: name='com.sikorokoro44.scientificcalculator'"
       - name: Upload to public release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v1.0.0 apk/app-release-signed.apk#scientific-calculator.apk --clobber --repo ${{ github.repository }}
+          UPLOAD_URL=$(curl -sL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/v1.0.0" \
+            | jq -r '.upload_url' | sed 's/{?name,label}//')
+          echo "Upload URL: $UPLOAD_URL"
+          curl -sL -X POST "$UPLOAD_URL&name=scientific-calculator.apk" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary @apk/app-release-signed.apk | jq -r '.browser_download_url'
       - name: Verify public download
         run: |
           URL="https://github.com/${{ github.repository }}/releases/download/v1.0.0/scientific-calculator.apk"
