@@ -36,13 +36,29 @@ jobs:
           path: app/build/test-results/testDebugUnitTest/
       - name: Build release APK
         run: gradle assembleRelease --stacktrace
-      - name: Generate signing keystore
+      - name: Validate signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          keytool -genkeypair -v -keystore release.keystore -storepass android -alias key0 -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Scientific Calculator, OU=Dev, O=Sikorokoro44, L=NA, ST=NA, C=US"
+          for v in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "Missing secret: $v"; exit 1; fi
+          done
+          echo "All signing secrets present."
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
       - name: Sign APK with apksigner
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           SDK=$(ls $ANDROID_SDK_ROOT/build-tools | sort -V | tail -1)
-          $ANDROID_SDK_ROOT/build-tools/$SDK/apksigner sign --ks release.keystore --ks-key-alias key0 --ks-pass pass:android --key-pass pass:android --out app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/*.apk
+          $ANDROID_SDK_ROOT/build-tools/$SDK/apksigner sign --ks release.keystore --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --out app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/*.apk
           $ANDROID_SDK_ROOT/build-tools/$SDK/apksigner verify --verbose app/build/outputs/apk/release/app-release-signed.apk
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
