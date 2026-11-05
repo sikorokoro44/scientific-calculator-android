@@ -27,7 +27,13 @@ jobs:
           java -version
           echo "JAVA_HOME=$JAVA_HOME"
       - name: Run unit tests
-        run: gradle test --stacktrace --tests "com.sikorokoro44.scientificcalculator.CalculatorEngineTest"
+        run: gradle :app:testDebugUnitTest --stacktrace
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: app/build/test-results/testDebugUnitTest/
       - name: Build release APK
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
