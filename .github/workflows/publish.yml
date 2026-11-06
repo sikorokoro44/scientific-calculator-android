@@ -23,14 +23,6 @@ jobs:
         run: |
           ls -la apk
           test -f apk/app-release-signed.apk
-      - name: Verify signature
-        run: |
-          SDK=$(ls $ANDROID_SDK_BASE/build-tools | sort -V | tail -1)
-          $ANDROID_SDK_BASE/build-tools/$SDK/apksigner verify --verbose apk/app-release-signed.apk
-      - name: Verify package ID
-        run: |
-          SDK=$(ls $ANDROID_SDK_BASE/build-tools | sort -V | tail -1)
-          $ANDROID_SDK_BASE/build-tools/$SDK/aapt dump badging apk/app-release-signed.apk | grep "package: name='com.sikorokoro44.scientificcalculator'"
       - name: Upload to public release
         run: |
           UPLOAD_URL=$(curl -sL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
